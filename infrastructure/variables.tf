@@ -10,9 +10,13 @@ variable "ecs_cluster_name" {
 #address to influx db
 #example default = "http://ec2-18-219-231-96.us-east-2.compute.amazonaws.com:8086/hyperflow_tests"
 #http://<url>:8086/<database>
-variable "influx_db_url"
+variable "influx_url"
 {
   default = ""
+}
+
+locals {
+  influx_db_url = "${var.influx_url != "" ? var.influx_url : format("%s%s%s", "http://", trimspace(file("../grafana/grafana-dns.txt")), ":8086/hyperflow_tests")}"
 }
 
 variable "launch_config_instance_type" {
@@ -80,7 +84,7 @@ variable "ec2_status_reporter"
   default = "krysp89/hyperflow-ec2-status-reporter:latest"
 }
 
-#change to "ENABLED" for feature to start working 
+#change to "ENABLED" for feature to start working
 variable "feature_download"
 {
   default = "DISABLED"

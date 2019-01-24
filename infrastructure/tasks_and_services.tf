@@ -9,7 +9,7 @@ data "template_file" "task_definition_hyperflow_worker" {
     rabbitmq_port    = "${var.server_port}"
     acess_key        = "${var.ACCESS_KEY}"
     secret_key       = "${var.SECRET_ACCESS_KEY}"
-    influxdb_url     = "${var.influx_db_url}"
+    influxdb_url     = "${local.influx_db_url}"
     feature_download = "${var.feature_download}"
     nfs_mount        = "${var.nfs_mount}"
   }
@@ -55,7 +55,7 @@ data "template_file" "task_definition_hyperflow_master" {
     container_name    = "hyperflow-master"
     host_port         = "${var.server_port}"
     container_port    = "${var.server_port}"
-    influx_db_url = "${var.influx_db_url}"
+    influx_db_url = "${local.influx_db_url}"
     acess_key         = "${var.ACCESS_KEY}"
     secret_key        = "${var.SECRET_ACCESS_KEY}"
     rabbitmq_managment_port = "${var.server_plugin_port}"
