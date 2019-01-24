@@ -57,11 +57,7 @@ The master machine is outside the auto scaling group, so it is possible to set a
 
 This step-by-step guide assumes that you run the HyperFlow engine from your local machine. This soon will be fixed, so that the engine is automatically deployed on the Master node in the cloud. 
 
-1. Install redis (on your local machine, required for the Hyperflow engine):
-
-    apt install redis
-
-2. Prepare an ECS user with the following roles:
+1. Prepare an ECS user with the following roles:
     * AmazonEC2FullAccess 
     * AmazonS3FullAccess 
     * AmazonECS_FullAccess
@@ -69,78 +65,39 @@ This step-by-step guide assumes that you run the HyperFlow engine from your loca
 
     It is also posible to use an Administrator IAM user.  
 
-3. Initialize terraform 
+2. Setup the monitoring service machine (Grafana and InfluxDB)
+```
+cd grafana
+terraform init
+terraform apply
+```
 
-   install terraform acording to https://www.terraform.io/intro/getting-started/install.html
-
-   Example ubuntu:
-
-   wget https://releases.hashicorp.com/terraform/0.11.7/terraform_0.11.7_linux_amd64.zip
-
-   unzip terraform_0.11.7_linux_amd64.zip
-
-   Set AWS credentials:
-   * export AWS_ACCESS_KEY_ID=(your access key id)
-   * export AWS_SECRET_ACCESS_KEY=(your secret access key)
-
-   Get infrastructure definition files:
-   git clone https://github.com/hyperflow-wms/hyperflow-terraform-ecs.git
-
-   cd ./hyperflow-terraform-ecs
-
-   ~/terraform init
-
-4. Setup the monitoring service machine (Grafana and InfluxDB)
-
-    On a remote server (e.g. an EC2 instance) perform:
-
-    git clone https://github.com/hyperflow-wms/hyperflow-grafana.git --recurse-submodules
-
-    cd hyperflow-grafana
-
-    sudo apt update
-
-    sudo apt install docker-compose
-
-    sudo docker-compose up -d
-
-    Open ports:
-    * grafana 3000
-    * influxDB 8083, 8086, 25826
-
-4. Prepare Montage data 
+3. Prepare Montage data 
   
-    Download data example to be procesed: https://s3.amazonaws.com/hyperflowdataexample/data_examples.zip
+Download data example to be procesed: https://s3.amazonaws.com/hyperflowdataexample/data_examples.zip
 
-    wget https://s3.amazonaws.com/hyperflowdataexample/data_examples.zip
+```
+wget https://s3.amazonaws.com/hyperflowdataexample/data_examples.zip
+unzip -a data_examples.zip
+```
 
-    unzip -a data_examples.zip
+4. Create the infrastructure
 
-    extract file
+```
+cd infrastructure
+terraform init
+terraform apply -var ‘ACCESS_KEY=XXXXXXXXXXXXXXXXX’ -var ‘SECRET_ACCESS_KEY=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx’
+```
 
-    Upload data from data_examples/data0.25/0.25/ to S3 on us-east-1(N. Virginia). Currently uploading data to other regions will not work. Note that here S3 bucket name and path are assumed to be 'hyperfloweast-2' and '0.25/input/', but you can set them as you like.
+5. Run the workflow 
 
-5. Create the infrastructure
+```
+cd runner
+terraform init
+terraform apply -var 'ACCESS_KEY=XXXXXXXXXXXXXXXX' -var 'SECRET_ACCESS_KEY=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX' -var 'JOB_DIRECTORY=/PATH/TO/THE/JOB/FILES' -var 'BUCKET_NAME=terraform-3344'
+```
 
-    terraform apply -var ‘ACCESS_KEY=XXXXXXXXXXXXXXXXX’ -var ‘SECRET_ACCESS_KEY=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx’ -var ‘influx_db_url=http://<influx_url>:8086/hyperflow_tests’
-
-    example influx_db_url=http://ec2-18-219-231-96.us-east-2.compute.amazonaws.com:8086/hyperflow_tests
-
-
-6. Run the workflow 
-
-    sudo docker run -v ~/workspacemgr/data/data0.25/0.25/workdir/:/workdir -e AMQP_URL='amqp://<rabbit_mq>:5672' -e AWS_SECRET_ACCESS_KEY='XXXXXXXXXXXXXXXXXX' -e AWS_ACCESS_KEY_ID="XXXXXXXXXXXXXXX" -e S3_BUCKET='hyperfloweast-2' -e S3_PATH='0.25/input/' -e METRIC_COLLECTOR="http:/<influx_db>:8086/hyperflow_tests" --net=host -it krysp89/hyperflow-hflow 
-
-    --net=host - Use host networking, provide easy way to connect to redis that is running on localhost 
-
-    Remember to map volume containing dag.json to /workdir: 
-
-    -v ~/workspacemgr/data/data0.25/0.25/workdir/:/workdir 
-
-
-    Other environment variables are identical with variables passed to hflow 
-
-7. Destroy the infrastructure
+6. Destroy the infrastructure
 
    terraform destroy
    
