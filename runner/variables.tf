@@ -1,28 +1,28 @@
-variable "bucket_name" {
+variable "BUCKET_NAME" {
   default = "hyperflow-1111"
 }
 
-variable "job_directory" {
+variable "JOB_DIRECTORY" {
   default = ""
 }
 
-variable "amqp_url" {
+variable "AMQP_URL" {
   default = ""
 }
 
-variable "metric_collector" {
+variable "METRIC_COLLECTOR" {
   default = ""
 }
 
-variable "access_key" {
+variable "ACCESS_KEY" {
   default = ""
 }
 
-variable "secret_access_key" {
+variable "SECRET_ACCESS_KEY" {
   default = ""
 }
 
 locals {
-  amqp_url = "${var.amqp_url != "" ? var.amqp_url : format("%s%s%s", "amqp://", trimspace(file("../infrastructure/master-dns.txt")), ":5672")}"
-  metric_collector = "${var.metric_collector != "" ? var.metric_collector : format("%s%s%s", "http://", trimspace(file("../infrastructure/master-dns.txt")), ":8086/hyperflow_tests")}"
+  AMQP_URL = "${var.AMQP_URL != "" ? var.AMQP_URL : format("%s%s%s", "amqp://", trimspace(file("../infrastructure/master-dns.txt")), ":5672")}"
+  METRIC_COLLECTOR = "${var.METRIC_COLLECTOR != "" ? var.METRIC_COLLECTOR : format("%s%s%s", "http://", trimspace(file("../infrastructure/master-dns.txt")), ":8086/hyperflow_tests")}"
 }

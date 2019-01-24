@@ -1,5 +1,5 @@
 resource "aws_s3_bucket" "job_bucket" {
-  bucket = "${var.bucket_name}"
+  bucket = "${var.BUCKET_NAME}"
   acl    = "private"
   force_destroy = true
 
@@ -11,11 +11,11 @@ resource "aws_s3_bucket" "job_bucket" {
 
 resource "null_resource" "upload_to_s3" {
   triggers {
-    s3_bucket = "${var.bucket_name}"
-    job_dir = "${var.job_directory}"
+    s3_bucket = "${var.BUCKET_NAME}"
+    job_dir = "${var.JOB_DIRECTORY}"
   }
 
   provisioner "local-exec" {
-    command = "aws s3 sync ${var.job_directory} s3://${aws_s3_bucket.job_bucket.id}"
+   t  command = "aws s3 sync ${var.JOB_DIRECTORY} s3://${aws_s3_bucket.job_bucket.id}"
   }
 }

@@ -34,7 +34,7 @@ resource "aws_instance" "hyperflow_runner" {
   }
 
   provisioner "file" {
-    source      = "${var.job_directory}/workdir/"
+    source      = "${var.JOB_DIRECTORY}/workdir/"
     destination = "/home/ubuntu/workdir"
   }
 
