@@ -1,20 +1,24 @@
 # HyperFlow deployment on Amazon ECS
 
-This project contains infrustructure configuration files for deployment of HyperFlow and workflows on Amazon ECS/EC2 + Docker with autoscaling. The files are as follows:
+This project contains infrustructure configuration files for deployment of HyperFlow and workflows on Amazon ECS/EC2 + Docker with autoscaling. The project structure is as follows:
  
-- main.tf - definition of master ec2 instances, cluster lunch configuration for new instances and cluster name
-- alarms.tf - alarm definitions
-- autoscaling_policy.tf - auto scaling policy for aws instance and auto scaling policy for services
-- security_group.tf - definition of security groups for iam instances
-- tasks_and_services.tf - definition of task for master and worker container, definition of 2 services one to manage master task and one form managing worker tasks
-- variables_const.tf - definitions of variables that usually will be not changed by user
-- variables.tf - definitions of variables that should be changed by user according to their needs
-- iam.tf - [Iam roles, profiles, policy](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/IAM_policies.html), IAM role specifies the permissions.
-- output.tf - return dns address to master node
-- task-hyperflow-master.json and task-hyperflow-worker.json contain templates of task definitions. Based on those definitions, ECS will start new containers with appropriate environment variables.
+- grafana/ - description of the monitoring services
+- infrastructure/ - contains definition of the master ec2 instance, ecs clusters and more:
+
+   - main.tf - definition of master ec2 instances, cluster lunch configuration for new instances and cluster name
+   - alarms.tf - alarm definitions
+   - autoscaling_policy.tf - auto scaling policy for aws instance and auto scaling policy for services
+   - security_group.tf - definition of security groups for iam instances
+   - tasks_and_services.tf - definition of task for master and worker container, definition of 2 services one to manage master task and one form managing worker tasks
+   - variables_const.tf - definitions of variables that usually will be not changed by user
+   - variables.tf - definitions of variables that should be changed by user according to their needs
+   - iam.tf - [Iam roles, profiles, policy](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/IAM_policies.html), IAM role specifies the permissions.
+   - output.tf - return dns address to master node
+   - task-hyperflow-master.json and task-hyperflow-worker.json contain templates of task definitions. Based on those definitions, ECS will start new containers with appropriate environment variables.
+- runner/ decription of uploads files to S3 bucket and the ec2 instance that runs the workflow
 
 # User Variables
-The most important variables from the user perspective are defined in the variables.tf file
+The most important variables from the user perspective are defined in the infrastructure/variables.tf file
 
 - ecs_cluster_name - name of cluster that will be created
 - launch_config_instance_type - ([EC2 instance types](https://aws.amazon.com/ec2/instance-types/)) to be used, e.g. t2.micro, t2.small, etc. 
@@ -55,8 +59,6 @@ The master machine is outside the auto scaling group, so it is possible to set a
 
 # Step by step instruction: deployment and running Montage workflow on Amazon ECS
 
-This step-by-step guide assumes that you run the HyperFlow engine from your local machine. This soon will be fixed, so that the engine is automatically deployed on the Master node in the cloud. 
-
 1. Prepare an ECS user with the following roles:
     * AmazonEC2FullAccess 
     * AmazonS3FullAccess 
@@ -89,6 +91,10 @@ terraform init
 terraform apply -var ‘ACCESS_KEY=XXXXXXXXXXXXXXXXX’ -var ‘SECRET_ACCESS_KEY=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx’
 ```
 
+Optional variables:
+- `-var 'influx_url=http://<influx_url>:8086/hyperflow_tests'` - provide this variable to use different instance of Grafana and InfluxDB
+- `-var 'feature_download=ENABLED'` - (additional feature) executor will not remove downloaded files after finishing task. Executor will check if file was already downloaded to reduce download time.
+
 5. Run the workflow 
 
 ```
@@ -97,23 +103,14 @@ terraform init
 terraform apply -var 'ACCESS_KEY=XXXXXXXXXXXXXXXX' -var 'SECRET_ACCESS_KEY=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX' -var 'JOB_DIRECTORY=/PATH/TO/THE/JOB/FILES' -var 'BUCKET_NAME=terraform-3344'
 ```
 
+`JOB_DIRECTORY` should be a path to the direcory containing the description and input files of the workflow. The directory is expected to contain `workdir/` (with `dag.json`) and `input/` subdirectories, which will be uploaded to the new S3 bucket with the given name - `BUCKET_NAME`. 
+
+Optional variables:
+- `-var 'METRIC_COLLECTOR=http:/<influx_db>:8086/hyperflow_tests'` - provide this variable to use different instance of Grafana and InfluxDB
+- `-var 'AMQP_URL='amqp://<rabbit_mq>:5672'` - specify to use different AMQP node
+- `-var 'CONTAINER=container_name'` - (additional feature) can be passed to use separate container for the task execution
+
+
 6. Destroy the infrastructure
 
-   terraform destroy
-   
-   
-# Additional features 
-
-1. Use separate Container for task execution 
-
-    When executing hflow set CONTAINER variable to use selected container for execution of tasks. 
-
-    CONTAINER="krysp89/hyperflow-montage" AMQP_URL="amqp://<rabbit_mq>:5672" S3_BUCKET="hyperfloweast-2" S3_PATH="2.0/input/" hflow run ~/workspacemgr/data/data2.0/2.0/workdir/dag.json -s 
-
-2. Download feature 
-
-    Executor will not remove downloaded files after finishing task. Executor will check if file was already downloaded to reduce download time. To enable feature it is required to pass variable feature_download="ENABLED" to terraform. 
-
-    terraform apply -var feature_download="ENABLED" -var "ACCESS_KEY=$AWS_ACCESS_KEY_ID" -var "SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY" -var "influx_db_url=http://<influx_db>:8086/hyperflow_tests" 
- 
- 
+   run `terraform destroy` in `grafana/`, `infrastructure/` and `runner/`.
