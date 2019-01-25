@@ -22,6 +22,10 @@ variable "SECRET_ACCESS_KEY" {
   default = ""
 }
 
+variable "CONTAINER" {
+  default = "krysp89/hyperflow-amqp-executor"
+}
+
 locals {
   AMQP_URL = "${var.AMQP_URL != "" ? var.AMQP_URL : format("%s%s%s", "amqp://", trimspace(file("../infrastructure/master-dns.txt")), ":5672")}"
   METRIC_COLLECTOR = "${var.METRIC_COLLECTOR != "" ? var.METRIC_COLLECTOR : format("%s%s%s", "http://", trimspace(file("../infrastructure/master-dns.txt")), ":8086/hyperflow_tests")}"
