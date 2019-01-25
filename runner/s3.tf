@@ -16,6 +16,6 @@ resource "null_resource" "upload_to_s3" {
   }
 
   provisioner "local-exec" {
-   t  command = "aws s3 sync ${var.JOB_DIRECTORY} s3://${aws_s3_bucket.job_bucket.id}"
+   command = "aws s3 sync ${var.JOB_DIRECTORY} s3://${aws_s3_bucket.job_bucket.id}"
   }
 }
